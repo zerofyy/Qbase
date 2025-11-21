@@ -25,9 +25,10 @@ class Bot:
 
             cls._instance.client = commands.Bot(
                 command_prefix = cls._instance.prefix,
-                intents = discord.Intents.all(),
+                intents = discord.Intents(message_content = True, guilds = True),
                 allowed_mentions = discord.AllowedMentions(everyone = False, roles = False, replied_user = False),
-                case_insensitive = True
+                case_insensitive = True,
+                help_command = None
             )
 
             Logger.ok('BotClient', 'Successfully created the Discord bot client.')
@@ -35,19 +36,31 @@ class Bot:
         return cls._instance
 
 
-    async def load_extensions(self) -> None:
-        """ Load all extensions. """
+    async def load_extensions(self) -> tuple[int, int]:
+        """
+        Load all extensions.
+
+        ------
+
+        Returns:
+            The number of extensions loaded and the number of total extensions.
+        """
 
         Logger.info('BotClient', 'Loading extensions...')
 
+        num_loaded, num_total = 0, 0
+
         for ext in glob.glob('extensions/*'):
+            ext = ext[11:-3]
+
             if ext.startswith('__'):
                 continue
 
-            ext = ext[11:-3]
+            num_total += 1
 
             try:
                 await self.client.load_extension(f'extensions.{ext}')
+                num_loaded += 1
                 Logger.ok('BotClient', f'  * Extension "{ext}" loaded successfully.')
 
             except commands.ExtensionNotFound:
@@ -63,6 +76,8 @@ class Bot:
                 Logger.error('BotClient', f'  * Extension "{ext}" encountered an error while loading.')
 
         Logger.ok('BotClient', 'Finished loading extensions.')
+
+        return num_loaded, num_total
 
 
 
